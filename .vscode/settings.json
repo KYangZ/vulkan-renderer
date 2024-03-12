@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "iostream": "cpp",
+        "stdexcept": "cpp"
+    },
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/src",
+        "${VULKAN_SDK}/include",
+        "/opt/homebrew/Cellar/glfw/3.4/include",
+        "/opt/homebrew/Cellar/glm/1.0.1/include"
+    ]
+}
