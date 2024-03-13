@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(vulkan-tutorial)
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+    message(STATUS "Default build type set to Release")
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11  " )
 
 add_executable(${PROJECT_NAME} src/main.cpp)
