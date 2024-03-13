@@ -14,6 +14,16 @@ add_executable(${PROJECT_NAME} src/main.cpp)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
+# GLSLC command to compile shaders to SPIR-V
+# find_program(GLSLC glslc)
+# set(shader_path ${CMAKE_HOME_DIRECTORY}/shaders/)
+# file(GLOB shaders RELATIVE ${CMAKE_SOURCE_DIR} "${shader_path}*.vert" "${shader_path}*.frag")
+# foreach(shader ${shaders})
+# set(input_glsl "${CMAKE_HOME_DIRECTORY}/${shader}")
+# set(output_spv "${CMAKE_CURRENT_SOURCE_DIR}/${input_glsl}.spv")
+# execute_process(COMMAND "glslc" "${input_glsl}" "-o" "${output_spv}")
+# endforeach()
+
 if (VULKAN_FOUND)
     message(STATUS "Found Vulkan, Including and Linking now")
     include_directories(${Vulkan_INCLUDE_DIRS})
