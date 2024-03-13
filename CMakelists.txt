@@ -7,7 +7,7 @@ if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Default build type set to Release")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11  " )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++20  " )
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
