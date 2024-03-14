@@ -28,14 +28,16 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
+#include <random>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MODEL_PATH = "models/viking_room.obj";
-const std::string TEXTURE_PATH = "textures/viking_room.png";
+const std::string MODEL_PATH = "models/cube.obj";
+const std::string TEXTURE_PATH = "textures/white.jpg";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
+const int INSTANCE_COUNT = 10000;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -123,6 +125,42 @@ struct Vertex {
     }
 };
 
+struct InstanceData {
+    glm::vec3 pos;
+    glm::vec3 rot;
+    float scale{ 0.0f };
+
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 1;
+        bindingDescription.stride = sizeof(InstanceData);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 1;
+        attributeDescriptions[0].location = 3;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(InstanceData, pos);
+
+        attributeDescriptions[1].binding = 1;
+        attributeDescriptions[1].location = 4;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(InstanceData, rot);
+
+        attributeDescriptions[2].binding = 1;
+        attributeDescriptions[2].location = 5;
+        attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(InstanceData, scale);
+
+        return attributeDescriptions;
+    }
+};
+
 namespace std {
     template<> struct hash<Vertex> {
         size_t operator()(Vertex const& vertex) const {
@@ -188,6 +226,8 @@ private:
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+    VkBuffer instanceBuffer;
+    VkDeviceMemory instanceBufferMemory;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -240,6 +280,7 @@ private:
         loadModel();
         createVertexBuffer();
         createIndexBuffer();
+        createInstanceBuffer();
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
@@ -299,6 +340,9 @@ private:
 
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
+
+        vkDestroyBuffer(device, instanceBuffer, nullptr);
+        vkFreeMemory(device, instanceBufferMemory, nullptr);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
@@ -643,13 +687,20 @@ private:
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         
-        auto bindingDescription = Vertex::getBindingDescription();
-        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+        VkVertexInputBindingDescription bindingDescriptions[] = {
+            Vertex::getBindingDescription(),
+            InstanceData::getBindingDescription()
+        };
 
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions[] = {
+            Vertex::getAttributeDescriptions(),
+            InstanceData::getAttributeDescriptions()
+        };
+
+        vertexInputInfo.vertexBindingDescriptionCount = 2;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions[0].size() + attributeDescriptions[1].size());
+        vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions[0].data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1035,6 +1086,38 @@ private:
         }
     }
 
+    void createInstanceBuffer() {
+        std::vector<InstanceData> instanceData;
+		instanceData.resize(INSTANCE_COUNT);
+
+        std::default_random_engine rng((unsigned)time(nullptr));
+		std::uniform_real_distribution<float> uniformDist(0.0, 1.0);
+
+        for (auto i = 0; i < INSTANCE_COUNT; i++) {
+            instanceData[i].pos = glm::vec3(-1.0f + uniformDist(rng) * 2.0f, -1.0f + uniformDist(rng) * 2.0f, -1.0f + uniformDist(rng) * 2.0f);
+			instanceData[i].rot = glm::vec3(M_PI, M_PI, M_PI);
+			instanceData[i].scale = 0.02f;
+        }
+
+        VkDeviceSize bufferSize = sizeof(InstanceData) * instanceData.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+            memcpy(data, instanceData.data(), (size_t) bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, instanceBuffer, instanceBufferMemory);
+
+        copyBuffer(stagingBuffer, instanceBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
     void createVertexBuffer() {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -1293,11 +1376,13 @@ private:
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
+            vkCmdBindVertexBuffers(commandBuffer, 1, 1, &instanceBuffer, offsets);
+
             vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
-            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), INSTANCE_COUNT, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
