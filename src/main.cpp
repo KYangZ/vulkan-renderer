@@ -34,10 +34,10 @@ const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
 const std::string MODEL_PATH = "models/cube.obj";
-const std::string TEXTURE_PATH = "textures/white.jpg";
+const std::string TEXTURE_PATH = "textures/stanford.png";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-const int INSTANCE_COUNT = 10000;
+const int INSTANCE_COUNT = 1;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -1090,13 +1090,19 @@ private:
         std::vector<InstanceData> instanceData;
 		instanceData.resize(INSTANCE_COUNT);
 
-        std::default_random_engine rng((unsigned)time(nullptr));
-		std::uniform_real_distribution<float> uniformDist(0.0, 1.0);
+        if (INSTANCE_COUNT == 1) {
+            instanceData[0].pos = glm::vec3(0, 0, 0);
+            instanceData[0].rot = glm::vec3(0, 0, 0);
+            instanceData[0].scale = 1.0f;
+        } else {
+            std::default_random_engine rng((unsigned)time(nullptr));
+            std::uniform_real_distribution<float> uniformDist(0.0, 1.0);
 
-        for (auto i = 0; i < INSTANCE_COUNT; i++) {
-            instanceData[i].pos = glm::vec3(-1.0f + uniformDist(rng) * 2.0f, -1.0f + uniformDist(rng) * 2.0f, -1.0f + uniformDist(rng) * 2.0f);
-			instanceData[i].rot = glm::vec3(M_PI, M_PI, M_PI);
-			instanceData[i].scale = 0.02f;
+            for (auto i = 0; i < INSTANCE_COUNT; i++) {
+                instanceData[i].pos = glm::vec3(-1.0f + uniformDist(rng) * 2.0f, -1.0f + uniformDist(rng) * 2.0f, -1.0f + uniformDist(rng) * 2.0f);
+                instanceData[i].rot = glm::vec3(M_PI, M_PI, M_PI);
+                instanceData[i].scale = 0.5f;
+            }
         }
 
         VkDeviceSize bufferSize = sizeof(InstanceData) * instanceData.size();
@@ -1419,7 +1425,7 @@ private:
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
