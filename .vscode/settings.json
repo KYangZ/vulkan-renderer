@@ -53,7 +53,11 @@
         "unordered_map": "cpp",
         "variant": "cpp",
         "vector": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "__tree": "cpp",
+        "fstream": "cpp",
+        "map": "cpp",
+        "set": "cpp"
     },
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/src",

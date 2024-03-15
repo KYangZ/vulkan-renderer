@@ -1,3 +1,6 @@
+#include "camera.hpp"
+#include "keyboard_movement.hpp"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -33,8 +36,8 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MODEL_PATH = "models/cube.obj";
-const std::string TEXTURE_PATH = "textures/stanford.png";
+const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 const int INSTANCE_COUNT = 1;
@@ -186,6 +189,9 @@ public:
 
 private:
     GLFWwindow* window;
+    engine::Camera camera;
+    engine::KeyboardMovementController keyboard_movement_controller;
+    std::chrono::time_point<std::chrono::steady_clock> currentTime;
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -253,6 +259,18 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
+        // init camera
+        camera = engine::Camera(
+            glm::mat4(1.0f),
+            glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f))
+        );
+
+        // init keyboard controller
+        keyboard_movement_controller = engine::KeyboardMovementController();
+
+        // also init the time
+        currentTime = std::chrono::high_resolution_clock::now();
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
@@ -718,7 +736,7 @@ private:
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -1419,14 +1437,17 @@ private:
     }
 
     void updateUniformBuffer(uint32_t currentImage) {
-        static auto startTime = std::chrono::high_resolution_clock::now();
 
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        auto newTime = std::chrono::high_resolution_clock::now();
+        float time_elapsed = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
+        currentTime = newTime;
+
+        keyboard_movement_controller.moveInXZPLane(window, time_elapsed, camera);
 
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        // glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f))
+        ubo.model = glm::mat4(1.0f);
+        ubo.view = camera.getViewMatrix();
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
