@@ -25,6 +25,12 @@ const float AMBIENT_LIGHT = 0.02;
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition * instanceScale + instancePos, 1.0);
 
+    if (length(normal) == 0.0f) {
+        fragColor = inColor;
+        fragTexCoord = inTexCoord;
+        return;
+    }
+
     vec3 normalWorldSpace = normalize((ubo.view * ubo.model * vec4(normal, 0.0)).xyz);
     float lightIntensity = AMBIENT_LIGHT + max(dot(normalWorldSpace, LIGHT_DIRECTION), 0);
 

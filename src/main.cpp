@@ -36,8 +36,8 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MODEL_PATH = "models/cube.obj";
-const std::string TEXTURE_PATH = "textures/white.jpg";
+const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 const int INSTANCE_COUNT = 1;
@@ -1072,16 +1072,18 @@ private:
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
 
-                vertex.normal = {
-                    attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
-                    attrib.normals[3 * index.normal_index + 2]
-                };
+                vertex.normal = {0.0, 0.0, 0.0};
+                if (!attrib.normals.empty()) {
+                    vertex.normal.x = attrib.normals[3 * index.normal_index + 0];
+                    vertex.normal.y = attrib.normals[3 * index.normal_index + 1];
+                    vertex.normal.z = attrib.normals[3 * index.normal_index + 2];
+                }
 
-                vertex.texCoord = {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-                };
+                vertex.texCoord = {0.0, 0.0};
+                if (!attrib.texcoords.empty()) {
+                    vertex.texCoord.x = attrib.texcoords[2 * index.texcoord_index + 0];
+                    vertex.texCoord.y = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+                }
 
                 vertex.color = {1.0f, 1.0f, 1.0f};
 
