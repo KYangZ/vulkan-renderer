@@ -40,7 +40,7 @@ const std::string MODEL_PATH = "models/cube.obj";
 const std::string TEXTURE_PATH = "textures/white.jpg";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-const int INSTANCE_COUNT = 50000;
+const int INSTANCE_COUNT = 1;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -91,6 +91,7 @@ struct SwapChainSupportDetails {
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 color;
+    glm::vec3 normal;
     glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription() {
@@ -102,29 +103,19 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+        attributeDescriptions.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos)});
+        attributeDescriptions.push_back({1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
+        attributeDescriptions.push_back({2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
+        attributeDescriptions.push_back({3, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, texCoord)});
 
         return attributeDescriptions;
     }
 
     bool operator==(const Vertex& other) const {
-        return pos == other.pos && color == other.color && texCoord == other.texCoord;
+        return pos == other.pos && color == other.color && normal == other.normal && texCoord == other.texCoord;
     }
 };
 
@@ -142,23 +133,11 @@ struct InstanceData {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-        attributeDescriptions[0].binding = 1;
-        attributeDescriptions[0].location = 3;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(InstanceData, pos);
-
-        attributeDescriptions[1].binding = 1;
-        attributeDescriptions[1].location = 4;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(InstanceData, rot);
-
-        attributeDescriptions[2].binding = 1;
-        attributeDescriptions[2].location = 5;
-        attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(InstanceData, scale);
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        attributeDescriptions.push_back({4, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(InstanceData, pos)});
+        attributeDescriptions.push_back({5, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(InstanceData, rot)});
+        attributeDescriptions.push_back({6, 1, VK_FORMAT_R32_SFLOAT, offsetof(InstanceData, scale)});
 
         return attributeDescriptions;
     }
@@ -167,7 +146,11 @@ struct InstanceData {
 namespace std {
     template<> struct hash<Vertex> {
         size_t operator()(Vertex const& vertex) const {
-            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
+            // return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
+            return ((((hash<glm::vec3>()(vertex.pos) ^
+                   (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+                   (hash<glm::vec3>()(vertex.normal) << 1)) >> 1) ^
+                   (hash<glm::vec2>()(vertex.texCoord) << 1);
         }
     };
 }
@@ -710,15 +693,17 @@ private:
             InstanceData::getBindingDescription()
         };
 
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions[] = {
-            Vertex::getAttributeDescriptions(),
-            InstanceData::getAttributeDescriptions()
-        };
+        auto vertexAttrDescriptions = Vertex::getAttributeDescriptions();
+        auto instanceAttrDescriptions = InstanceData::getAttributeDescriptions();
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+        attributeDescriptions.reserve(vertexAttrDescriptions.size() + instanceAttrDescriptions.size());
+        attributeDescriptions.insert(attributeDescriptions.end(), vertexAttrDescriptions.begin(), vertexAttrDescriptions.end());
+        attributeDescriptions.insert(attributeDescriptions.end(), instanceAttrDescriptions.begin(), instanceAttrDescriptions.end());
 
         vertexInputInfo.vertexBindingDescriptionCount = 2;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions[0].size() + attributeDescriptions[1].size());
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
         vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions;
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions[0].data();
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1085,6 +1070,12 @@ private:
                     attrib.vertices[3 * index.vertex_index + 0],
                     attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2]
+                };
+
+                vertex.normal = {
+                    attrib.normals[3 * index.normal_index + 0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2]
                 };
 
                 vertex.texCoord = {
