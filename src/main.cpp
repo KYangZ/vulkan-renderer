@@ -33,11 +33,11 @@
 #include <unordered_map>
 #include <random>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+const uint32_t WIDTH = 1920;
+const uint32_t HEIGHT = 1080;
 
-const std::string MODEL_PATH = "models/viking_room.obj";
-const std::string TEXTURE_PATH = "textures/viking_room.png";
+const std::string MODEL_PATH = "models/bunny.obj";
+const std::string TEXTURE_PATH = "textures/white.jpg";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 const int INSTANCE_COUNT = 1;
@@ -159,6 +159,10 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+
+    alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.02f};
+    alignas(16) glm::vec4 lightPosition{-1.f, 1.f, 2.f, 0.0f};
+    alignas(16) glm::vec4 lightColor{0.f, 0.f, 1.f, 1.f};
 };
 
 class HelloTriangleApplication {
@@ -1442,7 +1446,7 @@ private:
         ubo.model = glm::mat4(1.0f);
         ubo.view = camera.getViewMatrix();
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        ubo.proj[1][1] *= -1; 
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
