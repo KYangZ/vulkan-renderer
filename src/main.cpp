@@ -36,11 +36,13 @@
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
-const std::string MODEL_PATH = "models/bunny.obj";
+const std::string MODEL_PATHS[] = { "models/cube.obj", "models/plane.obj" };
+
+const std::string MODEL_PATH = "models/plane.obj";
 const std::string TEXTURE_PATH = "textures/white.jpg";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-const int INSTANCE_COUNT = 1000;
+const int INSTANCE_COUNT = 1;
 
 const size_t MAX_NUM_LIGHTS = 8;
 
@@ -661,7 +663,7 @@ private:
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.pImmutableSamplers = nullptr;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
@@ -1457,11 +1459,11 @@ private:
         UniformBufferObject ubo{};
         ubo.model = glm::mat4(1.0f);
         ubo.view = camera.getViewMatrix();
-        ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
+        ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 100.0f);
         ubo.proj[1][1] *= -1; 
 
         for (int i = 0; i < ubo.numLights; i++) {
-            ubo.pointLights[i].lightPosition = glm::rotate(glm::mat4(1.0f), std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count() * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * ubo.pointLights[i].lightPosition;
+            ubo.pointLights[i].lightPosition = glm::rotate(glm::mat4(1.0f), std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * ubo.pointLights[i].lightPosition;
         }
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
