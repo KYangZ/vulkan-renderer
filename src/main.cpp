@@ -36,7 +36,7 @@
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
-const std::string MODEL_PATHS[] = { "models/cube.obj", "models/plane.obj" };
+const std::string MODEL_PATHS[] = { "models/teapot.obj", "models/plane.obj" };
 
 const std::string MODEL_PATH = "models/plane.obj";
 const std::string TEXTURE_PATH = "textures/white.jpg";
@@ -297,7 +297,11 @@ private:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
-        loadModel();
+
+        for (const std::string path : MODEL_PATHS) {
+            loadModel(path);
+        }
+
         createVertexBuffer();
         createIndexBuffer();
         createInstanceBuffer();
@@ -1069,13 +1073,13 @@ private:
         endSingleTimeCommands(commandBuffer);
     }
 
-    void loadModel() {
+    void loadModel(const std::string modelPath) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str())) {
             throw std::runtime_error(warn + err);
         }
 
