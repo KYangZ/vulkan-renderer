@@ -168,6 +168,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+    alignas(16) glm::vec4 cameraPos;
 
     alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.01f};
     alignas(16) PointLight pointLights[MAX_NUM_LIGHTS]{
@@ -263,8 +264,9 @@ private:
 
         // init camera
         camera = engine::Camera(
+            glm::vec3(2.0f, 2.0f, 2.0f),
             glm::mat4(1.0f),
-            glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f))
+            glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f))
         );
 
         // init keyboard controller
@@ -1465,6 +1467,7 @@ private:
         ubo.view = camera.getViewMatrix();
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 100.0f);
         ubo.proj[1][1] *= -1; 
+        ubo.cameraPos = glm::vec4(camera.getPosition(), 0.0f);
 
         for (int i = 0; i < ubo.numLights; i++) {
             ubo.pointLights[i].lightPosition = glm::rotate(glm::mat4(1.0f), std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * ubo.pointLights[i].lightPosition;

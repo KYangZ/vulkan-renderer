@@ -10,6 +10,7 @@ void Camera::rotateCamera(glm::vec3 rotation) {
 
 void Camera::translateCamera(glm::vec3 translation) {
     view = glm::translate(view, glm::vec3(translation.x, translation.y, translation.z));
+    position += translation;
 }
     
 } 

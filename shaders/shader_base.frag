@@ -9,6 +9,7 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    vec3 cameraPos;
     vec4 ambientLightColor;
     PointLight pointLights[8];
     int numLights;
@@ -26,14 +27,23 @@ layout(location = 0) out vec4 outColor;
 void main() {
     // start with ambient light
     vec3 totalLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
+    vec3 viewDirection = normalize(ubo.cameraPos - fragWorldPos);
+    vec3 surfaceNormal = normalize(fragWorldNormal);
 
     for (int i = 0; i < ubo.numLights; i++) {
         PointLight l = ubo.pointLights[i];
 
+        // add diffuse lighting
         vec3 lightDirection = l.lightPosition - fragWorldPos;
         float attenuation = 1.0 / dot(lightDirection, lightDirection);
         vec3 lightColor = attenuation * l.lightColor.xyz * l.lightColor.w;
-        totalLight += lightColor * max(dot(normalize(fragWorldNormal), normalize(lightDirection)), 0);
+
+        normalize(lightDirection);
+        totalLight += lightColor * max(dot(surfaceNormal, lightDirection), 0);
+
+        // add specular lighting
+        vec3 halfAngle = normalize(lightDirection + viewDirection);
+        totalLight += lightColor * pow(clamp(dot(surfaceNormal, halfAngle), 0, 1), 128.0);
     }
 
     outColor = vec4(totalLight * fragColor, 1.0) * texture(texSampler, fragTexCoord);
