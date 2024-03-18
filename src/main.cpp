@@ -36,9 +36,11 @@
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
-const std::string MODEL_PATHS[] = { "models/teapot.obj", "models/plane.obj" };
+const glm::vec3 INIT_CAMERA_POSITION = {-5.0f, 0.0f, 8.0f};
 
-const std::string MODEL_PATH = "models/plane.obj";
+const std::string MODEL_PATHS[] = { "models/bunny.obj", "models/plane.obj" };
+
+// const std::string MODEL_PATH = "models/plane.obj";
 const std::string TEXTURE_PATH = "textures/white.jpg";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -172,11 +174,12 @@ struct UniformBufferObject {
 
     alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.01f};
     alignas(16) PointLight pointLights[MAX_NUM_LIGHTS]{
-        PointLight{glm::vec4{-1.f, 1.f, 2.f, 0.0f}, glm::vec4{0.f, 0.f, 1.f, 1.f}},
-        PointLight{glm::vec4{1.f, -1.f, 2.f, 0.0f}, glm::vec4{1.f, 0.f, 0.f, 1.f}},
-        PointLight{glm::vec4{1.f, 1.f, 2.f, 0.0f}, glm::vec4{0.f, 1.f, 0.f, 1.f}},
+        PointLight{glm::vec4{3.f, 0.f, 3.f, 0.0f}, glm::vec4{1.f, 0.f, 0.f, 1.f}},
+        PointLight{glm::vec4{0.f, 3.f, 3.f, 0.0f}, glm::vec4{0.f, 1.f, 0.f, 1.f}},
+        PointLight{glm::vec4{-3.f, 0.f, 3.f, 0.0f}, glm::vec4{0.f, 0.f, 1.f, 1.f}},
+        PointLight{glm::vec4{0.f, -3.f, 3.f, 0.0f}, glm::vec4{0.f, 1.f, 1.f, 1.f}},
     };
-    alignas(16) int numLights{3};
+    alignas(16) int numLights{4};
 };
 
 class HelloTriangleApplication {
@@ -264,9 +267,9 @@ private:
 
         // init camera
         camera = engine::Camera(
-            glm::vec3(2.0f, 2.0f, 2.0f),
+            INIT_CAMERA_POSITION,
             glm::mat4(1.0f),
-            glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f))
+            glm::lookAt(INIT_CAMERA_POSITION, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f))
         );
 
         // init keyboard controller
@@ -1463,12 +1466,14 @@ private:
         keyboard_movement_controller.moveInXZPLane(window, time_elapsed, camera);
 
         UniformBufferObject ubo{};
-        ubo.model = glm::mat4(1.0f);
+        ubo.model = glm::mat4{1.0f};
+        // ubo.model = glm::rotate(glm::mat4(1.0f), std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count() * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = camera.getViewMatrix();
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 100.0f);
         ubo.proj[1][1] *= -1; 
         ubo.cameraPos = glm::vec4(camera.getPosition(), 0.0f);
 
+        // point light movement
         for (int i = 0; i < ubo.numLights; i++) {
             ubo.pointLights[i].lightPosition = glm::rotate(glm::mat4(1.0f), std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count() * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * ubo.pointLights[i].lightPosition;
         }

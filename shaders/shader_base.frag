@@ -43,7 +43,7 @@ void main() {
 
         // add specular lighting
         vec3 halfAngle = normalize(lightDirection + viewDirection);
-        totalLight += lightColor * pow(clamp(dot(surfaceNormal, halfAngle), 0, 1), 128.0);
+        totalLight += lightColor * pow(clamp(dot(surfaceNormal, halfAngle), 0, 1), 512.0);
     }
 
     outColor = vec4(totalLight * fragColor, 1.0) * texture(texSampler, fragTexCoord);

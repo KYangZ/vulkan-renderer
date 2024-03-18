@@ -30,23 +30,16 @@ layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2) out vec3 fragWorldPos;
 layout(location = 3) out vec3 fragWorldNormal;
 
+const vec3 LIGHT_DIRECTION = normalize(vec3(-0.5, 0.0, 1.0));
+const float AMBIENT_LIGHT = 0.3;
+
 void main() {
-    vec4 worldPosition = (ubo.model * vec4(inPosition * instanceScale, 1.0f)) + vec4(instancePos, 0.0f);
-    gl_Position = ubo.proj * ubo.view * worldPosition;
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition * instanceScale + instancePos, 1.0);
 
-    fragWorldPos = worldPosition.xyz;
-    fragWorldNormal = vec3(0.0f);
+    vec3 normalWorldSpace = normalize((ubo.view * ubo.model * vec4(normal, 0.0)).xyz);
+    float lightIntensity = AMBIENT_LIGHT + max(dot(normalWorldSpace, LIGHT_DIRECTION), 0);
 
-    // if the normals are 0, there are no normals in the obj file. skip the lighting calculation.
-    if (length(normal) == 0.0f) {
-        fragColor = inColor;
-        fragTexCoord = inTexCoord;
-        return;
-    }
-
-    vec3 normalWorldSpace = normalize((ubo.model * vec4(normal, 0.0)).xyz);
-    fragWorldNormal = normalWorldSpace;
-
-    fragColor = inColor;
+    fragColor = lightIntensity * vec3(0.15 * instanceRot[0], 0.5 * instanceRot[1], 1.0);
     fragTexCoord = inTexCoord;
+    return;
 }
