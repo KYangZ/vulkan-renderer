@@ -4,28 +4,25 @@ namespace engine {
 
 void KeyboardMovementController::moveInXZPLane(GLFWwindow* window, float dt, Camera& c) {
 
-    glm::mat4 viewMatrix = c.getViewMatrix();
-    glm::vec3 right = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
-    glm::vec3 up = glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
-    glm::vec3 forward = glm::vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
+    glm::vec3 forward = normalize(c.getTargetPosition() - c.getCameraPosition());
+    glm::vec3 right = cross(forward, glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::vec3 up = cross(right, forward);
 
     glm::vec3 rotation{0};
     if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS) {
-        // rotation -= up;
-        rotation.z += 1.0f;
-    }
-
-    if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS) {
-        // rotation += up;
         rotation.z -= 1.0f;
     }
 
+    if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS) {
+        rotation.z += 1.0f;
+    }
+
     if (glfwGetKey(window, keys.lookUp) == GLFW_PRESS) {
-        rotation -= right;
+        rotation += right;
     }
 
     if (glfwGetKey(window, keys.lookDown) == GLFW_PRESS) {
-        rotation += right;
+        rotation -= right;
     }
 
     if (glm::dot(rotation, rotation) > std::numeric_limits<float>::epsilon()) {
@@ -35,11 +32,11 @@ void KeyboardMovementController::moveInXZPLane(GLFWwindow* window, float dt, Cam
     glm::vec3 translation{0};
 
     if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS) {
-        translation -= right;
+        translation += right;
     }
 
     if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS) {
-        translation += right;
+        translation -= right;
     }
 
     if (glfwGetKey(window, keys.moveForward) == GLFW_PRESS) {

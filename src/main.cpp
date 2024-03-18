@@ -37,6 +37,7 @@ const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
 const glm::vec3 INIT_CAMERA_POSITION = {-5.0f, 0.0f, 8.0f};
+const glm::vec3 INIT_CAMERA_TARGET = {0.0f, 0.0f, 0.0f};
 
 const std::string MODEL_PATHS[] = { "models/bunny.obj", "models/plane.obj" };
 
@@ -182,7 +183,7 @@ struct UniformBufferObject {
     alignas(16) int numLights{4};
 };
 
-class HelloTriangleApplication {
+class VulkanRenderer {
 public:
     void run() {
         initWindow();
@@ -268,8 +269,9 @@ private:
         // init camera
         camera = engine::Camera(
             INIT_CAMERA_POSITION,
+            INIT_CAMERA_TARGET,
             glm::mat4(1.0f),
-            glm::lookAt(INIT_CAMERA_POSITION, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f))
+            glm::lookAt(INIT_CAMERA_POSITION, INIT_CAMERA_TARGET, glm::vec3(0.0f, 0.0f, 1.0f))
         );
 
         // init keyboard controller
@@ -281,7 +283,7 @@ private:
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<VulkanRenderer*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
     }
 
@@ -1471,7 +1473,7 @@ private:
         ubo.view = camera.getViewMatrix();
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 100.0f);
         ubo.proj[1][1] *= -1; 
-        ubo.cameraPos = glm::vec4(camera.getPosition(), 0.0f);
+        ubo.cameraPos = glm::vec4(camera.getCameraPosition(), 0.0f);
 
         // point light movement
         for (int i = 0; i < ubo.numLights; i++) {
@@ -1752,7 +1754,7 @@ private:
 };
 
 int main() {
-    HelloTriangleApplication app;
+    VulkanRenderer app;
 
     try {
         app.run();

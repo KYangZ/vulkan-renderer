@@ -11,8 +11,9 @@ class Camera {
     public:
         Camera() = default;
 
-        Camera(glm::vec3 pos, glm::mat4 p, glm::mat4 v) {
-            position = pos;
+        Camera(glm::vec3 c, glm::vec3 t, glm::mat4 p, glm::mat4 v) {
+            cameraPosition = c;
+            targetPosition = t;
             proj = p;
             view = v;
         }
@@ -22,10 +23,12 @@ class Camera {
 
         const glm::mat4& getProjectionMatrix() const { return proj; }
         const glm::mat4& getViewMatrix() const { return view; }
-        const glm::vec3& getPosition() const { return position; }
+        const glm::vec3& getCameraPosition() const { return cameraPosition; }
+        const glm::vec3& getTargetPosition() const { return targetPosition; }
 
     private:
-        glm::vec3 position{};
+        glm::vec3 cameraPosition{};
+        glm::vec3 targetPosition{};
         glm::mat4 proj{1.f};
         glm::mat4 view{1.f};
 };

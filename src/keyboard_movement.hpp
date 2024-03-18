@@ -32,8 +32,8 @@ class KeyboardMovementController {
         void moveInXZPLane(GLFWwindow* window, float dt, Camera& c);
 
         KeyMappings keys{};
-        float moveSpeed{3.f};
-        float lookSpeed{1.5f};
+        float moveSpeed{10.f};
+        float lookSpeed{50.f};
 
 };
 
