@@ -4,4 +4,6 @@ A C++20 project exploring real-time 3D rendering with Vulkan and GLFW. It loads 
 
 ## Demo
 
-[Watch the demo](CS248A-Final-Video-9MB.mp4)
+https://github.com/user-attachments/assets/4769e29d-22ff-4108-9ac1-9f124c02db4a
+
+
